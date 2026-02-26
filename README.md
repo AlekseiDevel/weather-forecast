@@ -18,13 +18,14 @@
 
 Как развернуть
 
-1. Подготовка окружения
+1. Подготовка окружения  
+
 Клонируйте репозиторий и создайте файл .env в корневой папке. Используйте следующий пример:
 
 API_KEY=ваш_ключ_от_openweathermap  
 CITY=Moscow  
 INTERVAL_MINUTES=N  
-DATABASE_URL=postgresql://<user>:<password>@db:5432/weather_db
+DATABASE_URL=postgresql://user:password@db:5432/weather_db
 
 
 2. Запуск
@@ -40,22 +41,20 @@ docker-compose up --build
 
 Выполните команду для подключения к базе данных
 
-docker-compose exec db psql -U <user> -d weather_db
+docker-compose exec db psql -U user -d weather_db
 
 
 Для получения полной истории запросов с данными о погоде выполните следующий SQL-запрос:
 
 SELECT  
-      r.timestamp AT TIME ZONE 'UTC' AS "Время запроса",  
-      r.city AS "Город",  
-      r.status_code AS "Код ответа",  
-      w.temperature AS "Температура (°C)",  
-      w.humidity AS "Влажность (%)",  
-      w.description AS "Состояние"  
+      r.timestamp AT TIME ZONE 'UTC' as "Time",  
+      r.city as "City",  
+      w.temperature as "Temp",  
+      w.description as "Weather"  
 FROM  
-      requests_log r  
+      requests_log r  
 JOIN  
-      weather_data w ON r.id = w.request_id  
+      weather_data w ON r.id = w.request_id  
 ORDER BY  
       r.timestamp DESC;  
 
