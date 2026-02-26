@@ -3,31 +3,37 @@ import time
 import requests
 import logging
 from database import init_db, SessionLocal, RequestLog, WeatherData
+from dotenv import load_dotenv
 
-# Настройка логирования ошибок
+load_dotenv()
+
 logging.basicConfig(
     filename='error_log.log',
     level=logging.ERROR,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
+
 def fetch_and_save():
     api_key = os.getenv('API_KEY')
     city = os.getenv('CITY', 'Moscow')
-    url = f"http://api.openweathermap.org{city}&appid={api_key}&units=metric"
-    
+    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&APPID={api_key}&units=metric"
+
     session = SessionLocal()
     try:
         response = requests.get(url, timeout=10)
+
+        if response.status_code == 401:
+            logging.error("401: Неверный API ключ")
+            return
+
         response.raise_for_status()
         data = response.json()
 
-        # 1. Сохраняем лог запроса
         new_request = RequestLog(city=city, status_code=response.status_code)
         session.add(new_request)
-        session.flush() # Получаем ID запроса
+        session.flush()
 
-        # 2. Сохраняем данные погоды
         weather_info = WeatherData(
             request_id=new_request.id,
             temperature=data['main']['temp'],
@@ -36,15 +42,18 @@ def fetch_and_save():
         )
         session.add(weather_info)
         session.commit()
-        print(f"Данные обновлены для {city}: {data['main']['temp']}°C")
+        print(f"Данные сохранены для {city}: {data['main']['temp']}°C")
 
-    except (requests.exceptions.RequestException, requests.exceptions.Timeout) as e:
-        logging.error(f"Ошибка при запросе API: {e}")
+    except Exception as e:
+        logging.error(f"Ошибка: {e}")
         session.rollback()
     finally:
         session.close()
 
+
 if __name__ == "__main__":
+    print("Ожидание запуска БД...")
+    time.sleep(5)
     init_db()
     interval = int(os.getenv('INTERVAL_MINUTES', 10)) * 60
     while True:
