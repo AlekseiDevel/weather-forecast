@@ -1,4 +1,5 @@
-echo ".env
+.env
 __pycache__/
 *.log
-postgres_data/" > .gitignore
+postgres_data/
+*.db
